@@ -32,7 +32,6 @@ function pages(surf) {
 
     this.addPage = function(id) {
         that.pageList[id] = new page(that, id);
-
     };
 
     this.removePage = function(id) {
@@ -42,6 +41,7 @@ function pages(surf) {
 
     this.changeToPage = function(id) {
         that.activePage = id;
+        that.surface.append('<div id="'+id+'" class="page"></div>');
     };
 
     this.showNotifBar = function(autoclose) {
@@ -205,12 +205,16 @@ function pages(surf) {
 
 //page (indivial page)
 
+
 function viewPage(id)
 {
     var html = "<h1 style='left: 0; line-height: 200px;  position: absolute; text-align:center; top 50%; width: 100%'>"+id+"</h1>";
     $('#tileable').append(html);
 }
+
+
 function page(par, id) {
+    this.id = id;
     this.parent = par;
     this.groupList = {};
     var that = this;
@@ -218,11 +222,11 @@ function page(par, id) {
     var html = "<button onclick='viewPage("+id+")'style='height:50px; width:50px; margin-left:5px'>"+id+"</button>";
     $('.dashDock').prepend(html);
 
-    this.addGroup= function(id) {
-        that.groupList[id] = new group(that);
-        console.log(id, that.parent.activePage);
-        if(that.parent.activePage == that)
-            that.parent.surface.append('<div id="'+id+'"></div>"');
+
+    this.addGroup = function(id) {
+        that.groupList[id] = new group(that, id);
+        if(that.parent.activePage == that.id)
+            $('#'+that.id).append('<div id="'+id+'"></div>');
     };
     this.removeGroup = function(id) {
         that.groupList[id].removeTiles();
@@ -237,30 +241,43 @@ function page(par, id) {
 
 //group (indivial group)
 
-function group(par) {
+function group(par, id) {
+    this.id = id;
     this.parent = par;
     this.dragging = false;
+    this.data = {};
+    this.filters = {};
+    this.settings = {};
+    this.tileList = {};
 
-    this.addData = function(id, data) {
-        groups.groupList[id].data = data;
+    var that = this;
+
+    this.addData = function(data) {
+        that.data = data;
     };
 
-    this.addFilters = function(id, filters) {
-        groups.groupList[id].filters = filters;
+    this.addFilters = function(filters) {
+        that.filters = filters;
     };
-    this.addSettings = function(id, settings) {
-        groups.groupList[id].settings = settings;
+
+    this.addSettings = function(settings) {
+        that.settings = settings;
     };
-    this.addTiles = function(id, tiles) {
-        for(var iter in tiles)
-            groups.groupList[id].tiles[iter] = new tile(id, iter, tiles[iter].x, tiles[iter].y);
+
+    this.addTile = function(id, x, y) {
+        console.log(that, id, x, y);
+        that.tileList[id] = new tile(that, id, x, y);
+        if (that.parent.parent.activePage == that.parent.id)
+            console.log("Need to draw tile");
     };
+
     this.removeAllTiles = function() {
         console.log("Remove all tiles here");
     };
+
     this.removeTile = function(id, tile) {
-        $('#'+groups.groupList[id].tiles[tile].id).remove();
-        delete groups.groupList[id].tiles[tile];
+        $('#'+that.tileList[tile].id).remove();
+        delete that.tileList[tile];
     };
 }
 
@@ -276,7 +293,7 @@ function tile(parent, id, x, y) {
 
     var that = this;
     var html = "<div id='"+this.id+"' class='tile tile_"+x+"x"+y+"'>";
-    $('#'+this.parent).append(html);
+    $('#'+this.parent.id).append(html);
 
     $.get('tiles/tile_'+x+'x'+y+'.html', function(result) {
         $('#'+id).append(result);
@@ -414,14 +431,14 @@ function tile(parent, id, x, y) {
     };
 
     this.drawChart = function() {
-        var settings = groups.groupList[parent].settings;
-        var filters = groups.groupList[parent].filters;
-        var chart1 = {};
-        chart1.bindto = '#'+id+' > .front > .contents';
-        chart1.type = 'area';
-        chart1.size = [150 * this.size[0], 150 * this.size[1]];
-        chart1.data = groups.groupList[parent].data;
-        this.generate(chart1, mergeObjects(this.settings, settings), mergeObjects(this.filters, filters));
+        var settings = that.parent.settings;
+        var filters = that.parent.filters;
+        var chart = {};
+        chart.bindto = '#'+id+' > .front > .contents';
+        chart.type = 'area';
+        chart.size = [150 * this.size[0], 150 * this.size[1]];
+        chart.data = that.parent.data;
+        this.generate(chart, mergeObjects(that.settings, settings), mergeObjects(that.filters, filters));
     };
 }
 
@@ -470,18 +487,11 @@ $( document ).ready(function() {
     $('#addAPage').click(function(){
         counter = counter + 1;
         pages.addPage(counter);
+        pages.changeToPage(counter);
         pages.pageList[counter].addGroup('firstGroup');
+        pages.pageList[counter].groupList['firstGroup'].addData(data);
+        pages.pageList[counter].groupList['firstGroup'].addTile('newTile', 3, 2);
     })
-    
-
-    /*groups.add('first');
-    groups.addData('first', data);
-    groups.addTiles('first', {'chart': {x:3, y:2}});
-
-    groups.add('second');
-    groups.addData('second', data);
-    groups.addTiles('first', {'tile2': {x:2, y:2}});*/
-
 
 });
 
