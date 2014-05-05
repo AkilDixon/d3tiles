@@ -31,7 +31,8 @@ function pages(surf) {
     this.surface.css('height', ($(document).height()-16)+'px');
 
     this.addPage = function(id) {
-        that.pageList[id] = new page(that);
+        that.pageList[id] = new page(that, id);
+
     };
 
     this.removePage = function(id) {
@@ -204,12 +205,20 @@ function pages(surf) {
 
 //page (indivial page)
 
-function page(par) {
+function viewPage(id)
+{
+    var html = "<h1 style='left: 0; line-height: 200px;  position: absolute; text-align:center; top 50%; width: 100%'>"+id+"</h1>";
+    $('#tileable').append(html);
+}
+function page(par, id) {
     this.parent = par;
     this.groupList = {};
     var that = this;
 
-    this.addGroup = function(id) {
+    var html = "<button onclick='viewPage("+id+")'style='height:50px; width:50px; margin-left:5px'>"+id+"</button>";
+    $('.dashDock').prepend(html);
+
+    this.addGroup= function(id) {
         that.groupList[id] = new group(that);
         console.log(id, that.parent.activePage);
         if(that.parent.activePage == that)
@@ -453,11 +462,17 @@ var data = [
 var pages;
 
 $( document ).ready(function() {
-    pages = new pages($('#tileable'));
-    pages.addPage('firstPage');
-    pages.changeToPage('firstPage');
 
-    pages.pageList['firstPage'].addGroup('firstGroup');
+    pages = new pages($('#tileable'));
+    var counter = 0;
+    var html = "<button id='addAPage' style='height:50px; width:50px; margin-left:5px'>+</button>";
+    $('.dashDock').append(html);
+    $('#addAPage').click(function(){
+        counter = counter + 1;
+        pages.addPage(counter);
+        pages.pageList[counter].addGroup('firstGroup');
+    })
+    
 
     /*groups.add('first');
     groups.addData('first', data);
